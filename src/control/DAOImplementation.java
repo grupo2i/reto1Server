@@ -165,8 +165,8 @@ public class DAOImplementation implements DAO{
             st.setString(2, user.getLogin());
             st.setString(3, user.getEmail());
             st.setString(4, user.getFullName());
-            st.setString(5, user.getStatus());
-            st.setString(6, user.getPrivilege());
+            st.setString(5, user.getStatus().toString());
+            st.setString(6, user.getPrivilege().toString());
             st.setString(7, user.getPassword());
             st.setDate(8, user.getLastAccess());
             st.setDate(9, user.getLastPasswordChange());
@@ -183,4 +183,3 @@ public class DAOImplementation implements DAO{
         
     }
 
-}
