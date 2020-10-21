@@ -11,6 +11,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import message.Message;
+import user.User;
 
 /**
  * Handles messages from a client. Every accepted connection launches a ServerWorker
@@ -37,6 +38,29 @@ public class ServerWorker extends Thread {
         }
     }
     
+    private void HandleClientMessages(Message clientMessage) throws IOException, ClassNotFoundException {
+        //Get message type
+        Message.Type messageType = clientMessage.getType();
+        System.out.println("Message type: " + messageType);
+        switch(messageType) {
+            case SIGN_UP:
+                User signUpUser = (User)clientMessage.getData();
+                signUpUser.printData();
+                break;
+            case SIGN_IN:
+                User logInUser = (User)clientMessage.getData();
+                System.out.println("Login: " + logInUser.getLogin());
+                System.out.println("Password: " + logInUser.getPassword());
+                break;
+            case LOG_OFF:
+                break;
+            case CLOSE_CONNECTION:
+                break;
+            default:
+                break;
+        }
+    }
+    
     /**
      * Handles messages from the clientSocket.
      */
@@ -46,16 +70,14 @@ public class ServerWorker extends Thread {
         try {
             Message input = new Message(Message.Type.LOG_OFF, null); //Dummy message
             while(input.getType() != Message.Type.CLOSE_CONNECTION) {
+                //Read and handle client messages
                 input = (Message)clientInput.readObject();
+                HandleClientMessages(input);
+                
+                //Send a response
                 if(input.getType() != Message.Type.CLOSE_CONNECTION) {
-                    System.out.print("Message type: " + input.getType());
-                    DataTest data = (DataTest)input.getData();
-                    System.out.print(" number: " + data.getNum());
-                    System.out.println(" message: " + data.getMsg());
                     serverOutput.writeObject(input);
                     serverOutput.flush();
-                } else {
-                    System.out.println("Message type: " + input.getType());
                 }
             }
         } catch (IOException e) {
