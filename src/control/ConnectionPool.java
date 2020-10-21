@@ -3,7 +3,6 @@
  */
 package control;
 
-import com.mysql.jdbc.Connection;
 import java.sql.SQLException;
 import java.util.ResourceBundle;
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -26,7 +25,7 @@ public class ConnectionPool {
             basicDataSource = new BasicDataSource();
 
             //Object used to take data from 'properties' properties file.
-            propertiesFile = ResourceBundle.getBundle("properties.properties");
+            propertiesFile = ResourceBundle.getBundle("config.config");
 
             //Setting the DB attributes...
             basicDataSource.setDriverClassName(propertiesFile.getString("Driver"));
@@ -48,8 +47,8 @@ public class ConnectionPool {
      * @return A connection to the DB.
      * @throws java.sql.SQLException If something goes wrong.
      */
-    public synchronized static Connection getConnection() throws SQLException {
-        return (Connection) getBasicDataSource().getConnection();
+    public synchronized static java.sql.Connection getConnection() throws SQLException {
+        return getBasicDataSource().getConnection();
     }
     
 }
