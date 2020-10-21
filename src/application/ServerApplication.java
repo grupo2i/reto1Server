@@ -10,7 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- *
+ * Server entry point.
  * @author aitor
  */
 public class ServerApplication {
@@ -20,7 +20,8 @@ public class ServerApplication {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-                ServerSocket serverSocket = null;
+        ServerSocket serverSocket = null;
+        
         try {
             serverSocket = new ServerSocket(PORT);
         } catch (IOException ex) {

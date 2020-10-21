@@ -37,6 +37,10 @@ public class ServerWorker extends Thread {
         }
     }
     
+    /**
+     * Method to handle messages from the client.
+     * @param clientMessage Message to handle.
+     */
     private void HandleClientMessages(Message clientMessage) throws IOException, ClassNotFoundException {
         //Get message type
         Message.Type messageType = clientMessage.getType();
