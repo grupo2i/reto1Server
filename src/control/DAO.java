@@ -1,7 +1,6 @@
 package control;
 
 import java.sql.Connection;
-import user.User;
 
 /**
  *
