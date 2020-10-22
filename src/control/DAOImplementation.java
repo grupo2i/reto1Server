@@ -1,18 +1,16 @@
+/**
+ * 
+ */
 package control;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import user.User;
-
-/* sign up insert: INSERT INTO user (id, username, email, name, status, privilege, password, lastAccess, lastPaswordChange)  
-VALUES ('2', 'manolito', 'manolo@gmail.com', 'manolo', '1', '1', 'abcd*1234', '2020-10-20', '2020-10-21');    */ 
+import user.User; 
 
 /**
  * Data Access Object.
@@ -23,26 +21,6 @@ public class DAOImplementation implements DAO{
     private Statement stmt = null;
     private ResultSet rs = null;
     private Connection conn = null;
-    
-    private ResourceBundle configFile;
-    private String user;
-    private String password;
-    private String connectionString;
-
-    public DAOImplementation() {
-        try {
-            this.configFile = ResourceBundle.getBundle("control.config");
-            Class.forName(configFile.getString("Driver")).newInstance();
-            this.user = configFile.getString("DBUser");
-            this.password = configFile.getString("DBPass");
-            this.connectionString = configFile.getString("Conn");
-        
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
-            // handle any errors
-            System.out.println("ERROR: DAO constructor.");
-            System.out.println("SQLException: " + ex.getMessage());
-        }
-    }
 
     /**
      * Connects to the database.
@@ -51,7 +29,7 @@ public class DAOImplementation implements DAO{
     @Override
     public Connection Connect() {
         try {
-            return DriverManager.getConnection(connectionString +"?user=" + user +"&password="+ password +"&useSSL=false");
+            return ConnectionPool.getConnection();
         } catch (SQLException ex) {
             // handle any errors
             System.out.println("ERROR: Connect.");
