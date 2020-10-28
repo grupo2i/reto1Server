@@ -33,7 +33,7 @@ public class ServerApplication {
         System.out.println("Server listening on port: " + serverSocket.getLocalPort());
         
         //Accept connections and start a listener thread through Worker.
-        Socket clientSocket = null; 
+        Socket clientSocket = null;
         while(true) {
             try {
                 clientSocket = serverSocket.accept();
