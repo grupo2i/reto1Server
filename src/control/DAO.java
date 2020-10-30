@@ -1,6 +1,13 @@
 package control;
 
+import exceptions.EmailAlreadyExistsException;
+import exceptions.PasswordDoesNotMatchException;
+import exceptions.UserAlreadyExistsException;
 import java.sql.Connection;
+import user.User;
+import exceptions.UserNotFoundException;
+import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  *
@@ -9,7 +16,11 @@ import java.sql.Connection;
 public interface DAO {
     public Connection Connect();
     public void Disconnect();
-    public boolean checkUsername(String username);
-    public boolean checkPassword(String password);
+    public User getUserByUsername(String username) throws UserNotFoundException, IOException;
+    public User signIn(User user) throws UserNotFoundException, IOException, PasswordDoesNotMatchException;
+    public User signUp(User user) throws SQLException, UserAlreadyExistsException, EmailAlreadyExistsException;
+    public boolean userNameIsRegistered(User user);
+    public boolean emailIsRegistered(User user);
+    
     
 }
