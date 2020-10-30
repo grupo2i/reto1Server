@@ -19,8 +19,8 @@ public interface DAO {
     public User getUserByUsername(String username) throws UserNotFoundException, IOException;
     public User signIn(User user) throws UserNotFoundException, IOException, PasswordDoesNotMatchException;
     public User signUp(User user) throws SQLException, UserAlreadyExistsException, EmailAlreadyExistsException;
-    public boolean userNameIsRegistered(User user);
-    public boolean emailIsRegistered(User user);
+    public boolean userNameIsRegistered(String username);
+    public boolean emailIsRegistered(String email);
     
     
 }

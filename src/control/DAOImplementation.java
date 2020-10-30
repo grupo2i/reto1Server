@@ -96,10 +96,8 @@ public class DAOImplementation implements DAO {
                 auxUser.setEmail(rs.getString("email"));
                 auxUser.setFullName(rs.getString("name"));
                 auxUser.setPassword(rs.getString("password"));
-                /*   char[] array = new char[8];
-               rs.getCharacterStream(5).read(array);
-               String aux = Char
-                 */
+                auxUser.setStatus(User.UserStatus.valueOf(rs.getString("status")));
+                auxUser.setPrivilege(User.UserPrivilege.valueOf(rs.getString("privilege")));
                 auxUser.setLastAccess(rs.getDate("lastAccess"));
                 auxUser.setLastPasswordChange(rs.getDate("lastPasswordChange"));
             } else {
@@ -145,15 +143,13 @@ public class DAOImplementation implements DAO {
     @Override
     public User signUp(User user) throws SQLException, UserAlreadyExistsException, EmailAlreadyExistsException {
         User auxUser = new User();
-        Integer idAssign = null;
-        boolean estaUser = false;
-        boolean estaEmail = false;
+        Integer idAssign;
 
-        if (userNameIsRegistered(user)) {
-            throw new UserAlreadyExistsException(user);
+        if (userNameIsRegistered(user.getLogin())) {
+            throw new UserAlreadyExistsException(user.getLogin());
         }
-        if (emailIsRegistered(user)) {
-            throw new EmailAlreadyExistsException(user);
+        if (emailIsRegistered(user.getEmail())) {
+            throw new EmailAlreadyExistsException(user.getEmail());
         }
         conn = Connect();
         try {
@@ -167,7 +163,7 @@ public class DAOImplementation implements DAO {
         stmt.execute(query);
         rs = stmt.getResultSet();
         rs.next();
-        idAssign = rs.getInt(0);
+        idAssign = rs.getInt(1);
 
         String insert = "insert into user(id,username,email,name,status,privilege,password,lastAccess,lastPasswordChange)";
 
@@ -196,14 +192,19 @@ public class DAOImplementation implements DAO {
         return auxUser;
     }
 
+    /**
+     * 
+     * @param username
+     * @return 
+     */
     @Override
-    public boolean userNameIsRegistered(User user) {
+    public boolean userNameIsRegistered(String username) {
         boolean esta = false;
         try {
             conn = Connect();
             stmt = conn.createStatement();
             String query;
-            query = "SELECT * FROM user WHERE username like " + user.getLogin() + ";";
+            query = "SELECT * FROM user WHERE username like " + username + ";";
             stmt.execute(query);
             rs = stmt.getResultSet();
 
@@ -224,17 +225,17 @@ public class DAOImplementation implements DAO {
 
     /**
      *
-     * @param user
+     * @param email
      * @return
      */
     @Override
-    public boolean emailIsRegistered(User user) {
+    public boolean emailIsRegistered(String email) {
         boolean esta = false;
         try {
             conn = Connect();
             stmt = conn.createStatement();
             String query;
-            query = "SELECT * FROM user WHERE email like " + user.getEmail() + ";";
+            query = "SELECT * FROM user WHERE email like " + email + ";";
             stmt.execute(query);
             rs = stmt.getResultSet();
 
