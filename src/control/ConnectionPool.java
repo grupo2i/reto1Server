@@ -47,7 +47,7 @@ public class ConnectionPool {
      * @return A connection to the DB.
      * @throws java.sql.SQLException If something goes wrong.
      */
-    public static java.sql.Connection getConnection() throws SQLException {
+    public synchronized static java.sql.Connection getConnection() throws SQLException {
         return getBasicDataSource().getConnection();
     }
     
