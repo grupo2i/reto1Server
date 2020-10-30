@@ -96,10 +96,8 @@ public class DAOImplementation implements DAO {
                 auxUser.setEmail(rs.getString("email"));
                 auxUser.setFullName(rs.getString("name"));
                 auxUser.setPassword(rs.getString("password"));
-                /*   char[] array = new char[8];
-               rs.getCharacterStream(5).read(array);
-               String aux = Char
-                 */
+                auxUser.setStatus(User.UserStatus.valueOf(rs.getString("status")));
+                auxUser.setPrivilege(User.UserPrivilege.valueOf(rs.getString("privilege")));
                 auxUser.setLastAccess(rs.getDate("lastAccess"));
                 auxUser.setLastPasswordChange(rs.getDate("lastPasswordChange"));
             } else {
