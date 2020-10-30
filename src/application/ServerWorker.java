@@ -5,10 +5,16 @@
  */
 package application;
 
+import control.DAOImplementation;
+import exceptions.EmailAlreadyExistsException;
+import exceptions.UserAlreadyExistsException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import message.Message;
 import user.User;
 
@@ -49,6 +55,14 @@ public class ServerWorker extends Thread {
             case SIGN_UP:
                 User signUpUser = (User)clientMessage.getData();
                 signUpUser.printData();
+                DAOImplementation dao = new DAOImplementation();
+                try {
+                    dao.signUp(signUpUser);                
+                } catch (SQLException | UserAlreadyExistsException | EmailAlreadyExistsException ex) {
+                    System.out.println("Exception on sign up");
+                }
+                serverOutput.writeObject(new Message(Message.Type.SIGN_UP, signUpUser));
+                serverOutput.flush();
                 break;
             case SIGN_IN:
                 User logInUser = (User)clientMessage.getData();
@@ -78,10 +92,11 @@ public class ServerWorker extends Thread {
                 HandleClientMessages(input);
                 
                 //Send a response
+                /*
                 if(input.getType() != Message.Type.CLOSE_CONNECTION) {
                     serverOutput.writeObject(input);
                     serverOutput.flush();
-                }
+                }*/
             }
         } catch (IOException e) {
             String worker = this.getClass().getName();
@@ -97,21 +112,21 @@ public class ServerWorker extends Thread {
             System.out.println("Error msg " + ex.getMessage());
         } finally {    
             try {
-                System.out.println("Connection Closing..");
+                //System.out.println("Connection Closing..");
                 if(serverOutput != null) {
                    serverOutput.close();
-                   System.out.println("Socket Out Closed");
+                   //System.out.println("Socket Out Closed");
                 }
                 if (clientInput != null) {
                     clientInput.close(); 
-                    System.out.println("Socket Input Closed");
+                    //System.out.println("Socket Input Closed");
                 }
                 if (clientSocket != null) {
                     clientSocket.close();
-                    System.out.println("Socket Closed");
+                    //System.out.println("Socket Closed");
                 }
             } catch(IOException ie) {
-                System.out.println("Socket Close Error");
+                //System.out.println("Socket Close Error");
             }
         }
     }
