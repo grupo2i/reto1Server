@@ -9,10 +9,12 @@ import exceptions.UserAlreadyExistsException;
 import exceptions.EmailAlreadyExistsException;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import user.User;
@@ -27,24 +29,10 @@ public class DAOImplementation implements DAO {
     private Statement stmt = null;
     private ResultSet rs = null;
     private Connection conn = null;
+    
 
-    /**
-     * Connects to the database.
-     *
-     * @return Connection
-     */
-    @Override
-    public Connection Connect() {
-        try {
-            return ConnectionPool.getConnection();
-        } catch (SQLException ex) {
-            // handle any errors
-            System.out.println("ERROR: Connect.");
-            System.out.println("SQLException: " + ex.getMessage());
-            System.out.println("SQLState: " + ex.getSQLState());
-            System.out.println("VendorError: " + ex.getErrorCode());
-            return null;
-        }
+    public DAOImplementation(){
+        conn = ConnectionPool.getConnection();
     }
 
     /**
@@ -60,7 +48,8 @@ public class DAOImplementation implements DAO {
                 stmt.close();
             }
             if (conn != null) {
-                conn.close();
+                //conn.close();
+                ConnectionPool.releaseConnection(conn);
             }
         } catch (SQLException ex) {
             // handle any errors
@@ -83,10 +72,9 @@ public class DAOImplementation implements DAO {
     public User getUserByUsername(String username) throws UserNotFoundException, IOException {
         User auxUser = new User();
         try {
-            conn = Connect();
             stmt = conn.createStatement();
             String query;
-            query = "SELECT * FROM user WHERE username like " + username + ";";
+            query = "SELECT * FROM user WHERE username like '" + username + "';";
             stmt.execute(query);
             rs = stmt.getResultSet();
 
@@ -110,7 +98,7 @@ public class DAOImplementation implements DAO {
             System.out.println("SQLState: " + ex.getSQLState());
             System.out.println("VendorError: " + ex.getErrorCode());
         } finally {
-            Disconnect();
+            
         }
         return auxUser;
     }
@@ -120,15 +108,23 @@ public class DAOImplementation implements DAO {
      * @param user
      * @return
      * @throws UserNotFoundException
-     * @throws IOException
      * @throws PasswordDoesNotMatchException
      */
     @Override
-    public User signIn(User user) throws UserNotFoundException, IOException, PasswordDoesNotMatchException {
-        User auxUser = getUserByUsername(user.getLogin());
-        if (!auxUser.getPassword().equals(user.getPassword())) {
-            throw new PasswordDoesNotMatchException();
+    public User signIn(User user) throws UserNotFoundException, PasswordDoesNotMatchException {
+        User auxUser = null;
+        try {
+            auxUser = getUserByUsername(user.getLogin());
+            if (!auxUser.getPassword().equals(user.getPassword())) {
+                throw new PasswordDoesNotMatchException();
+            }
+            
+        } catch (IOException ex) {
+            Logger.getLogger(DAOImplementation.class.getName()).log(Level.SEVERE, null, ex);
+        } finally{
+            Disconnect();
         }
+        
         return auxUser;
 
     }
@@ -136,41 +132,43 @@ public class DAOImplementation implements DAO {
      *
      * @param user
      * @return
-     * @throws SQLException
      * @throws UserAlreadyExistsException
      * @throws EmailAlreadyExistsException
      */
     @Override
-    public User signUp(User user) throws SQLException, UserAlreadyExistsException, EmailAlreadyExistsException {
-        User auxUser = new User();
-        Integer idAssign;
-
-        if (userNameIsRegistered(user.getLogin())) {
-            throw new UserAlreadyExistsException(user.getLogin());
-        }
-        if (emailIsRegistered(user.getEmail())) {
-            throw new EmailAlreadyExistsException(user.getEmail());
-        }
-        conn = Connect();
+    public User signUp(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException {
         try {
+            Integer idAssign;
+
+            if (userNameIsRegistered(user.getLogin())) {
+                throw new UserAlreadyExistsException(user.getLogin());
+            }
+            if (emailIsRegistered(user.getEmail())) {
+                throw new EmailAlreadyExistsException(user.getEmail());
+            }
+            
             stmt = conn.createStatement();
-        } catch (SQLException ex) {
-            Logger.getLogger(DAOImplementation.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        stmt = conn.createStatement();
-        String query;
-        query = "SELECT COUNT (*) FROM user;";
-        stmt.execute(query);
-        rs = stmt.getResultSet();
-        rs.next();
-        idAssign = rs.getInt(1);
+            stmt = conn.createStatement();
+            String query;
+            query = "SELECT COUNT(*) FROM user;";
+            stmt.execute(query);
+            rs = stmt.getResultSet();
+            if(rs.next()){
+                idAssign = rs.getInt(1);
+                
+            }else{
+                idAssign = 0;
+            }
+            user.setId(idAssign + 1);
+            user.setStatus(User.UserStatus.ENABLED);
+            user.setPrivilege(User.UserPrivilege.USER);
+            user.setLastAccess(Date.valueOf(LocalDate.now()));
+            user.setLastPasswordChange(Date.valueOf(LocalDate.now()));
 
-        String insert = "insert into user(id,username,email,name,status,privilege,password,lastAccess,lastPasswordChange)";
-
-        try {
+            String insert = "insert into user values(?,?,?,?,?,?,?,?,?);";
             PreparedStatement st;
             st = conn.prepareStatement(insert);
-            st.setInt(1, idAssign + 1);
+            st.setInt(1, user.getId());
             st.setString(2, user.getLogin());
             st.setString(3, user.getEmail());
             st.setString(4, user.getFullName());
@@ -179,17 +177,15 @@ public class DAOImplementation implements DAO {
             st.setString(7, user.getPassword());
             st.setDate(8, user.getLastAccess());
             st.setDate(9, user.getLastPasswordChange());
-
             st.executeUpdate();
             st.close();
-            auxUser = user;
 
         } catch (SQLException ex) {
             Logger.getLogger(DAOImplementation.class.getName()).log(Level.SEVERE, null, ex);
+        }finally{
+            Disconnect();
         }
-        Disconnect();
-
-        return auxUser;
+        return user;
     }
 
     /**
@@ -201,10 +197,9 @@ public class DAOImplementation implements DAO {
     public boolean userNameIsRegistered(String username) {
         boolean esta = false;
         try {
-            conn = Connect();
             stmt = conn.createStatement();
             String query;
-            query = "SELECT * FROM user WHERE username like " + username + ";";
+            query = "SELECT * FROM user WHERE username = '" + username + "';";
             stmt.execute(query);
             rs = stmt.getResultSet();
 
@@ -218,7 +213,6 @@ public class DAOImplementation implements DAO {
             System.out.println("SQLState: " + ex.getSQLState());
             System.out.println("VendorError: " + ex.getErrorCode());
         } finally {
-            Disconnect();
         }
         return esta;
     }
@@ -232,10 +226,9 @@ public class DAOImplementation implements DAO {
     public boolean emailIsRegistered(String email) {
         boolean esta = false;
         try {
-            conn = Connect();
             stmt = conn.createStatement();
             String query;
-            query = "SELECT * FROM user WHERE email like " + email + ";";
+            query = "SELECT * FROM user WHERE email = '" + email + "';";
             stmt.execute(query);
             rs = stmt.getResultSet();
 
@@ -249,7 +242,7 @@ public class DAOImplementation implements DAO {
             System.out.println("SQLState: " + ex.getSQLState());
             System.out.println("VendorError: " + ex.getErrorCode());
         } finally {
-            Disconnect();
+            
         }
         return esta;
     }

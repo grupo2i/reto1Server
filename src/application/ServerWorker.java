@@ -5,10 +5,20 @@
  */
 package application;
 
+import control.DAO;
+import control.DAOFactory;
+import control.DAOImplementation;
+import exceptions.EmailAlreadyExistsException;
+import exceptions.PasswordDoesNotMatchException;
+import exceptions.UserAlreadyExistsException;
+import exceptions.UserNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import message.Message;
 import user.User;
 
@@ -44,16 +54,32 @@ public class ServerWorker extends Thread {
     private void HandleClientMessages(Message clientMessage) throws IOException, ClassNotFoundException {
         //Get message type
         Message.Type messageType = clientMessage.getType();
-        System.out.println("Message type: " + messageType);
+        Message returnMessage = null;
+        DAO dao = DAOFactory.getDao(1);
         switch(messageType) {
             case SIGN_UP:
-                User signUpUser = (User)clientMessage.getData();
-                signUpUser.printData();
+                User user = (User)clientMessage.getData();
+                try{
+                    user = dao.signUp(user);
+                    //The following line wont be executed if there is any of the catched exceptions.
+                    returnMessage = new Message(Message.Type.SIGN_UP, user);
+                }catch(UserAlreadyExistsException e){
+                    returnMessage = new Message(Message.Type.USER_ALREADY_EXISTS, user);
+                }catch(EmailAlreadyExistsException e){
+                    returnMessage = new Message(Message.Type.EMAIL_ALREADY_EXISTS, user);
+                }
                 break;
             case SIGN_IN:
-                User logInUser = (User)clientMessage.getData();
-                System.out.println("Login: " + logInUser.getLogin());
-                System.out.println("Password: " + logInUser.getPassword());
+                User signInUser = (User)clientMessage.getData();
+                try{
+                    signInUser = dao.signIn(signInUser);
+                    //The following line wont be executed if there is any of the catched exceptions.
+                    returnMessage = new Message(Message.Type.SIGN_IN, signInUser);
+                }catch(UserNotFoundException e){
+                    returnMessage = new Message(Message.Type.USER_NOT_FOUND, signInUser);
+                }catch(PasswordDoesNotMatchException e){
+                    returnMessage = new Message(Message.Type.PASSWORD_DOES_NOT_MATCH, signInUser);
+                }
                 break;
             case LOG_OFF:
                 break;
@@ -62,6 +88,8 @@ public class ServerWorker extends Thread {
             default:
                 break;
         }
+        serverOutput.writeObject(returnMessage);
+        serverOutput.flush();
     }
     
     /**
@@ -76,12 +104,6 @@ public class ServerWorker extends Thread {
                 //Read and handle client messages
                 input = (Message)clientInput.readObject();
                 HandleClientMessages(input);
-                
-                //Send a response
-                if(input.getType() != Message.Type.CLOSE_CONNECTION) {
-                    serverOutput.writeObject(input);
-                    serverOutput.flush();
-                }
             }
         } catch (IOException e) {
             String worker = this.getClass().getName();

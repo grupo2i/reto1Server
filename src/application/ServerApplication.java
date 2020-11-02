@@ -5,6 +5,7 @@
  */
 package application;
 
+import control.ConnectionPool;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -21,6 +22,7 @@ public class ServerApplication {
      */
     public static void main(String[] args) {
         ServerSocket serverSocket = null;
+        ConnectionPool.initializePool();
         
         try {
             serverSocket = new ServerSocket(PORT);
