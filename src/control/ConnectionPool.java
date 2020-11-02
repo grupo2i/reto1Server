@@ -1,54 +1,56 @@
-/**
- * Contains all the classes related to data access.
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
 package control;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
-import org.apache.commons.dbcp2.BasicDataSource;
 
 /**
- * A connection pool that provides connections to the DAO.
- * @see DAO
+ *
  * @author aitor
  */
 public class ConnectionPool {
-    private static ResourceBundle propertiesFile = null;
-    private static BasicDataSource basicDataSource = null;
+    private static final Integer TOTAL_CONNECTIONS = 10;
     
-    /**
-     * Initializes a BasicDataSource object and returns it.
-     * @return BasicDataSouce object initialized.
-     */
-    public static BasicDataSource getBasicDataSource(){
-        if(basicDataSource == null){
-            basicDataSource = new BasicDataSource();
-
-            //Object used to take data from 'properties' properties file.
-            propertiesFile = ResourceBundle.getBundle("config.config");
-
-            //Setting the DB attributes...
-            basicDataSource.setDriverClassName(propertiesFile.getString("Driver"));
-            basicDataSource.setUsername(propertiesFile.getString("DBUser"));
-            basicDataSource.setPassword(propertiesFile.getString("DBPass"));
-            basicDataSource.setUrl(propertiesFile.getString("Conn"));
-
-            //Setting some connection pool attributes...
-            basicDataSource.setInitialSize(10);
-            basicDataSource.setMaxTotal(10);
-            basicDataSource.setMaxWaitMillis(5000);
+    private static ArrayList<Connection> freeConnections = new ArrayList<>();
+    private static ArrayList<Connection> usedConnections = new ArrayList<>();
+    
+    private static ResourceBundle propertiesFile = null;
+    
+    
+    public static void initializePool(){
+        try{
+            propertiesFile = ResourceBundle.getBundle("configuration.config");
+            for(int i = 0; i < TOTAL_CONNECTIONS; i++){
+                freeConnections.add(DriverManager.getConnection(propertiesFile.getString("Conn"),
+                    propertiesFile.getString("DBUser"), propertiesFile.getString("DBPass")));
+            }
+        }catch(SQLException ex){
+            System.out.println(ex + ": InitializePool()");
         }
-        
-        return basicDataSource;
     }
     
-    /**
-     * Return a connection to the DB if there is any avaliable.
-     * @return A connection to the DB.
-     * @throws java.sql.SQLException If something goes wrong.
-     */
-    public synchronized static java.sql.Connection getConnection() throws SQLException {
-        return getBasicDataSource().getConnection();
+    public static synchronized Connection getConnection(){
+        while(true){
+            if(freeConnections.size() > 0){
+                Connection connection = freeConnections.get(freeConnections.size()-1);
+                freeConnections.remove(freeConnections.size()-1);
+                usedConnections.add(connection);
+                break;
+            }
+        }
+        return usedConnections.get(usedConnections.size()-1);
+    }
+    
+    public static synchronized void releaseConnection(Connection connection){
+        freeConnections.add(connection);
+        usedConnections.remove(connection);
     }
     
 }
