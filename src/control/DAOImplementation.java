@@ -31,16 +31,9 @@ public class DAOImplementation implements DAO {
     private Connection conn = null;
     
 
-    /**
-     * Connects to the database.
-     *
-     * @return Connection
-     */
-    @Override
-    public Connection Connect() {
-        return ConnectionPool2.getConnection();
+    public DAOImplementation(){
+        conn = ConnectionPool.getConnection();
     }
-    
 
     /**
      * Disconnects from the database.
@@ -56,7 +49,7 @@ public class DAOImplementation implements DAO {
             }
             if (conn != null) {
                 //conn.close();
-                ConnectionPool2.releaseConnection(conn);
+                ConnectionPool.releaseConnection(conn);
             }
         } catch (SQLException ex) {
             // handle any errors
@@ -79,10 +72,9 @@ public class DAOImplementation implements DAO {
     public User getUserByUsername(String username) throws UserNotFoundException, IOException {
         User auxUser = new User();
         try {
-            conn = Connect();
             stmt = conn.createStatement();
             String query;
-            query = "SELECT * FROM user WHERE username like " + username + ";";
+            query = "SELECT * FROM user WHERE username like '" + username + "';";
             stmt.execute(query);
             rs = stmt.getResultSet();
 
@@ -108,7 +100,7 @@ public class DAOImplementation implements DAO {
             System.out.println("SQLState: " + ex.getSQLState());
             System.out.println("VendorError: " + ex.getErrorCode());
         } finally {
-            Disconnect();
+            
         }
         return auxUser;
     }
@@ -118,15 +110,23 @@ public class DAOImplementation implements DAO {
      * @param user
      * @return
      * @throws UserNotFoundException
-     * @throws IOException
      * @throws PasswordDoesNotMatchException
      */
     @Override
-    public User signIn(User user) throws UserNotFoundException, IOException, PasswordDoesNotMatchException {
-        User auxUser = getUserByUsername(user.getLogin());
-        if (!auxUser.getPassword().equals(user.getPassword())) {
-            throw new PasswordDoesNotMatchException();
+    public User signIn(User user) throws UserNotFoundException, PasswordDoesNotMatchException {
+        User auxUser = null;
+        try {
+            auxUser = getUserByUsername(user.getLogin());
+            if (!auxUser.getPassword().equals(user.getPassword())) {
+                throw new PasswordDoesNotMatchException();
+            }
+            
+        } catch (IOException ex) {
+            Logger.getLogger(DAOImplementation.class.getName()).log(Level.SEVERE, null, ex);
+        } finally{
+            Disconnect();
         }
+        
         return auxUser;
 
     }
@@ -148,7 +148,7 @@ public class DAOImplementation implements DAO {
             if (emailIsRegistered(user.getEmail())) {
                 throw new EmailAlreadyExistsException(user.getEmail());
             }
-            conn = Connect();
+            
             stmt = conn.createStatement();
             stmt = conn.createStatement();
             String query;
@@ -199,7 +199,6 @@ public class DAOImplementation implements DAO {
     public boolean userNameIsRegistered(String username) {
         boolean esta = false;
         try {
-            conn = Connect();
             stmt = conn.createStatement();
             String query;
             query = "SELECT * FROM user WHERE username = '" + username + "';";
@@ -216,7 +215,6 @@ public class DAOImplementation implements DAO {
             System.out.println("SQLState: " + ex.getSQLState());
             System.out.println("VendorError: " + ex.getErrorCode());
         } finally {
-            Disconnect();
         }
         return esta;
     }
@@ -230,7 +228,6 @@ public class DAOImplementation implements DAO {
     public boolean emailIsRegistered(String email) {
         boolean esta = false;
         try {
-            conn = Connect();
             stmt = conn.createStatement();
             String query;
             query = "SELECT * FROM user WHERE email = '" + email + "';";
@@ -247,7 +244,7 @@ public class DAOImplementation implements DAO {
             System.out.println("SQLState: " + ex.getSQLState());
             System.out.println("VendorError: " + ex.getErrorCode());
         } finally {
-            Disconnect();
+            
         }
         return esta;
     }

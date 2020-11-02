@@ -9,7 +9,9 @@ import control.DAO;
 import control.DAOFactory;
 import control.DAOImplementation;
 import exceptions.EmailAlreadyExistsException;
+import exceptions.PasswordDoesNotMatchException;
 import exceptions.UserAlreadyExistsException;
+import exceptions.UserNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -53,10 +55,10 @@ public class ServerWorker extends Thread {
         //Get message type
         Message.Type messageType = clientMessage.getType();
         Message returnMessage = null;
+        DAO dao = DAOFactory.getDao(1);
         switch(messageType) {
             case SIGN_UP:
                 User user = (User)clientMessage.getData();
-                DAO dao = DAOFactory.getDao(1);
                 try{
                     user = dao.signUp(user);
                     //The following line wont be executed if there is any of the catched exceptions.
@@ -65,14 +67,19 @@ public class ServerWorker extends Thread {
                     returnMessage = new Message(Message.Type.USER_ALREADY_EXISTS, user);
                 }catch(EmailAlreadyExistsException e){
                     returnMessage = new Message(Message.Type.EMAIL_ALREADY_EXISTS, user);
-                } catch (SQLException ex) {
-                    returnMessage = new Message(Message.Type.UNEXPECTED_ERROR, user);
                 }
                 break;
             case SIGN_IN:
-                User logInUser = (User)clientMessage.getData();
-                System.out.println("Login: " + logInUser.getLogin());
-                System.out.println("Password: " + logInUser.getPassword());
+                User signInUser = (User)clientMessage.getData();
+                try{
+                    signInUser = dao.signIn(signInUser);
+                    //The following line wont be executed if there is any of the catched exceptions.
+                    returnMessage = new Message(Message.Type.SIGN_IN, signInUser);
+                }catch(UserNotFoundException e){
+                    returnMessage = new Message(Message.Type.USER_NOT_FOUND, signInUser);
+                }catch(PasswordDoesNotMatchException e){
+                    returnMessage = new Message(Message.Type.PASSWORD_DOES_NOT_MATCH, signInUser);
+                }
                 break;
             case LOG_OFF:
                 break;
