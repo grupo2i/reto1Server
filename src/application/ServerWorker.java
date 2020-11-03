@@ -1,13 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package application;
 
 import control.DAO;
 import control.DAOFactory;
-import control.DAOImplementation;
 import exceptions.EmailAlreadyExistsException;
 import exceptions.PasswordDoesNotMatchException;
 import exceptions.UserAlreadyExistsException;
@@ -16,9 +10,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import message.Message;
 import user.User;
 
