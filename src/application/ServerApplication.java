@@ -9,23 +9,23 @@ import control.ConnectionPool;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ResourceBundle;
 
 /**
  * Server entry point.
  * @author aitor
  */
 public class ServerApplication {
-    private static final int PORT = 5005;
-    
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
         ServerSocket serverSocket = null;
         ConnectionPool.initializePool();
-        
+        ResourceBundle configFile = ResourceBundle.getBundle("configuration.config");
+        Integer port = Integer.valueOf(configFile.getString("Port"));
         try {
-            serverSocket = new ServerSocket(PORT);
+            serverSocket = new ServerSocket(port);
         } catch (IOException ex) {
             System.out.println("IOException: " + ex.getMessage());
         }
