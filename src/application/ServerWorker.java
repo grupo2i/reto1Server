@@ -1,13 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package application;
 
 import control.DAO;
 import control.DAOFactory;
-import control.DAOImplementation;
 import exceptions.EmailAlreadyExistsException;
 import exceptions.PasswordDoesNotMatchException;
 import exceptions.UserAlreadyExistsException;
@@ -16,9 +10,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import message.Message;
 import user.User;
 
@@ -29,16 +20,20 @@ import user.User;
 public class ServerWorker extends Thread {
     private Socket clientSocket = null;
     private ObjectInputStream clientInput = null;
-    private ObjectOutputStream serverOutput =null;
+    private ObjectOutputStream serverOutput = null;
+    private Boolean hasConnection;
     
     /**
      * ServerWorker constructor, initializes IO with the client.
      * @param client Client socket from the accepted connection.
      */
-    public ServerWorker(Socket client) {
-        //Should check the socket
-        clientSocket = client;
+    public ServerWorker(Socket client, Boolean hasConnection) {
+        
         try {
+            this.hasConnection = hasConnection;
+            if(this.hasConnection) ServerApplication.useClientConnection();
+            //Should check the socket
+            clientSocket = client;
             //The order is important! (Opposite of clients order to avoid a deadlock)
             serverOutput = new ObjectOutputStream(clientSocket.getOutputStream());
             clientInput = new ObjectInputStream(clientSocket.getInputStream());
@@ -54,11 +49,11 @@ public class ServerWorker extends Thread {
     private void HandleClientMessages(Message clientMessage) throws IOException, ClassNotFoundException {
         //Get message type
         Message.Type messageType = clientMessage.getType();
-        Message returnMessage = null;
+        Message returnMessage;
         DAO dao = DAOFactory.getDao(1);
+        User user = (User)clientMessage.getData();
         switch(messageType) {
             case SIGN_UP:
-                User user = (User)clientMessage.getData();
                 try{
                     user = dao.signUp(user);
                     //The following line wont be executed if there is any of the catched exceptions.
@@ -70,22 +65,18 @@ public class ServerWorker extends Thread {
                 }
                 break;
             case SIGN_IN:
-                User signInUser = (User)clientMessage.getData();
                 try{
-                    signInUser = dao.signIn(signInUser);
+                    user = dao.signIn(user);
                     //The following line wont be executed if there is any of the catched exceptions.
-                    returnMessage = new Message(Message.Type.SIGN_IN, signInUser);
+                    returnMessage = new Message(Message.Type.SIGN_IN, user);
                 }catch(UserNotFoundException e){
-                    returnMessage = new Message(Message.Type.USER_NOT_FOUND, signInUser);
+                    returnMessage = new Message(Message.Type.USER_NOT_FOUND, user);
                 }catch(PasswordDoesNotMatchException e){
-                    returnMessage = new Message(Message.Type.PASSWORD_DOES_NOT_MATCH, signInUser);
+                    returnMessage = new Message(Message.Type.PASSWORD_DOES_NOT_MATCH, user);
                 }
                 break;
-            case LOG_OFF:
-                break;
-            case CLOSE_CONNECTION:
-                break;
             default:
+                returnMessage = new Message(Message.Type.UNEXPECTED_ERROR, user);
                 break;
         }
         serverOutput.writeObject(returnMessage);
@@ -97,13 +88,15 @@ public class ServerWorker extends Thread {
      */
     @Override
     public void run() {
-        System.out.println("Client connected.");
         try {
-            Message input = new Message(Message.Type.LOG_OFF, null); //Dummy message
-            while(input.getType() != Message.Type.CLOSE_CONNECTION) {
+            if(hasConnection){
                 //Read and handle client messages
-                input = (Message)clientInput.readObject();
+                Message input = (Message)clientInput.readObject();
                 HandleClientMessages(input);
+            }else{
+                Message rejectMessage = new Message(Message.Type.UNEXPECTED_ERROR, new User());
+                serverOutput.writeObject(rejectMessage);
+                serverOutput.flush();
             }
         } catch (IOException e) {
             String worker = this.getClass().getName();
@@ -117,7 +110,7 @@ public class ServerWorker extends Thread {
             String worker = this.getClass().getName(); //reused String line for getting thread name
             System.out.println("ClassNotFoundException "+ worker +" terminated abruptly");
             System.out.println("Error msg " + ex.getMessage());
-        } finally {    
+        } finally {
             try {
                 System.out.println("Connection Closing..");
                 if(serverOutput != null) {
@@ -132,6 +125,7 @@ public class ServerWorker extends Thread {
                     clientSocket.close();
                     System.out.println("Socket Closed");
                 }
+                if(hasConnection) ServerApplication.releaseClientConnection();
             } catch(IOException ie) {
                 System.out.println("Socket Close Error");
             }

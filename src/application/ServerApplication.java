@@ -1,21 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package application;
 
 import control.ConnectionPool;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ResourceBundle;
 
 /**
  * Server entry point.
  * @author aitor
  */
 public class ServerApplication {
-    private static final int PORT = 5005;
+    private static Integer freeClientConnections = 10;
     
     /**
      * @param args the command line arguments
@@ -23,9 +19,10 @@ public class ServerApplication {
     public static void main(String[] args) {
         ServerSocket serverSocket = null;
         ConnectionPool.initializePool();
-        
+        ResourceBundle configFile = ResourceBundle.getBundle("configuration.config");
+        Integer port = Integer.valueOf(configFile.getString("Port"));
         try {
-            serverSocket = new ServerSocket(PORT);
+            serverSocket = new ServerSocket(port);
         } catch (IOException ex) {
             System.out.println("IOException: " + ex.getMessage());
         }
@@ -33,14 +30,28 @@ public class ServerApplication {
         System.out.println("Server listening on port: " + serverSocket.getLocalPort());
         
         //Accept connections and start a listener thread through Worker.
-        Socket clientSocket = null;
         while(true) {
             try {
-                clientSocket = serverSocket.accept();
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("server accept");
+                if(freeClientConnections > 0){
+                    ServerWorker serverWorker = new ServerWorker(clientSocket, Boolean.TRUE);
+                    serverWorker.start();
+                }else{
+                    //This worker will reject the client by sending an error message
+                    ServerWorker serverWorker = new ServerWorker(clientSocket, Boolean.FALSE);
+                    serverWorker.start();
+                }
             } catch (IOException ex) {
                 System.out.println("IOException: " + ex.getMessage());
             }
-            new ServerWorker(clientSocket).start();
         }
+    }
+    
+    public static void useClientConnection(){
+        freeClientConnections--;
+    }
+    public static void releaseClientConnection(){
+        freeClientConnections++;
     }
 }
