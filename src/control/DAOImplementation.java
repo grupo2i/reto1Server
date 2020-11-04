@@ -130,7 +130,6 @@ public class DAOImplementation implements DAO {
             }
 
             stmt = conn.createStatement();
-            stmt = conn.createStatement();
             String query;
             query = "SELECT COUNT(*) FROM user;";
             stmt.execute(query);
