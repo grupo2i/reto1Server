@@ -4,12 +4,16 @@ import control.DAO;
 import control.DAOFactory;
 import exceptions.EmailAlreadyExistsException;
 import exceptions.PasswordDoesNotMatchException;
+import exceptions.UnexpectedErrorException;
 import exceptions.UserAlreadyExistsException;
 import exceptions.UserNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import message.Message;
 import user.User;
 
@@ -26,9 +30,9 @@ public class ServerWorker extends Thread {
     /**
      * ServerWorker constructor, initializes IO with the client.
      * @param client Client socket from the accepted connection.
+     * @param hasConnection
      */
     public ServerWorker(Socket client, Boolean hasConnection) {
-        
         try {
             this.hasConnection = hasConnection;
             if(this.hasConnection) ServerApplication.useClientConnection();
@@ -62,6 +66,8 @@ public class ServerWorker extends Thread {
                     returnMessage = new Message(Message.Type.USER_ALREADY_EXISTS, user);
                 }catch(EmailAlreadyExistsException e){
                     returnMessage = new Message(Message.Type.EMAIL_ALREADY_EXISTS, user);
+                } catch (SQLException | UnexpectedErrorException ex) {
+                    returnMessage = new Message(Message.Type.UNEXPECTED_ERROR, user);
                 }
                 break;
             case SIGN_IN:
@@ -73,6 +79,8 @@ public class ServerWorker extends Thread {
                     returnMessage = new Message(Message.Type.USER_NOT_FOUND, user);
                 }catch(PasswordDoesNotMatchException e){
                     returnMessage = new Message(Message.Type.PASSWORD_DOES_NOT_MATCH, user);
+                }catch(SQLException | UnexpectedErrorException e){
+                    returnMessage = new Message(Message.Type.UNEXPECTED_ERROR, new User());
                 }
                 break;
             default:
@@ -94,41 +102,43 @@ public class ServerWorker extends Thread {
                 Message input = (Message)clientInput.readObject();
                 HandleClientMessages(input);
             }else{
-                Message rejectMessage = new Message(Message.Type.UNEXPECTED_ERROR, new User());
-                serverOutput.writeObject(rejectMessage);
-                serverOutput.flush();
+                throw new UnexpectedErrorException();
             }
-        } catch (IOException e) {
-            String worker = this.getClass().getName();
-            System.out.println("IO Error/ Client " + worker + " terminated abruptly");
-            System.out.println("Error msg " + e.getMessage());
-        }
-        catch(NullPointerException e){
-            String worker = this.getClass().getName(); //reused String line for getting thread name
-            System.out.println("Client "+ worker +" Closed");
-        } catch (ClassNotFoundException ex) {
-            String worker = this.getClass().getName(); //reused String line for getting thread name
-            System.out.println("ClassNotFoundException "+ worker +" terminated abruptly");
-            System.out.println("Error msg " + ex.getMessage());
+        } catch (IOException | NullPointerException | ClassNotFoundException | UnexpectedErrorException e) {
+            sendUnexpectedErrorMessage();
         } finally {
             try {
-                System.out.println("Connection Closing..");
-                if(serverOutput != null) {
-                   serverOutput.close();
-                   System.out.println("Socket Out Closed");
-                }
-                if (clientInput != null) {
-                    clientInput.close(); 
-                    System.out.println("Socket Input Closed");
-                }
-                if (clientSocket != null) {
-                    clientSocket.close();
-                    System.out.println("Socket Closed");
-                }
-                if(hasConnection) ServerApplication.releaseClientConnection();
+                disconnect();
             } catch(IOException ie) {
                 System.out.println("Socket Close Error");
             }
         }
+    }
+    
+    private void sendUnexpectedErrorMessage(){
+        try {
+            Message rejectMessage = new Message(Message.Type.UNEXPECTED_ERROR, new User());
+            serverOutput.writeObject(rejectMessage);
+            serverOutput.flush();
+        } catch (IOException ex) {
+            Logger.getLogger(ServerWorker.class.getName()).log(Level.SEVERE, null, ex);
+        } 
+    }
+    
+    private void disconnect() throws IOException{
+        System.out.println("Connection Closing..");
+        if(serverOutput != null) {
+           serverOutput.close();
+           System.out.println("Socket Out Closed");
+        }
+        if (clientInput != null) {
+            clientInput.close(); 
+            System.out.println("Socket Input Closed");
+        }
+        if (clientSocket != null) {
+            clientSocket.close();
+            System.out.println("Socket Closed");
+        }
+        if(hasConnection) ServerApplication.releaseClientConnection();
     }
 }

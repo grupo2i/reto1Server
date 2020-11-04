@@ -24,15 +24,11 @@ public class ConnectionPool {
     private static ResourceBundle propertiesFile = null;
     
     
-    public static void initializePool(){
-        try{
-            propertiesFile = ResourceBundle.getBundle("configuration.config");
-            for(int i = 0; i < TOTAL_CONNECTIONS; i++){
-                freeConnections.add(DriverManager.getConnection(propertiesFile.getString("Conn"),
-                    propertiesFile.getString("DBUser"), propertiesFile.getString("DBPass")));
-            }
-        }catch(SQLException ex){
-            System.out.println(ex + ": InitializePool()");
+    public static void initializePool() throws SQLException{
+        propertiesFile = ResourceBundle.getBundle("configuration.config");
+        for(int i = 0; i < TOTAL_CONNECTIONS; i++){
+            freeConnections.add(DriverManager.getConnection(propertiesFile.getString("Conn"),
+                propertiesFile.getString("DBUser"), propertiesFile.getString("DBPass")));
         }
     }
     
