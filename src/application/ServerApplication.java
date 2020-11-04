@@ -39,7 +39,7 @@ public class ServerApplication {
                         ServerWorker serverWorker = new ServerWorker(clientSocket, Boolean.TRUE);
                         serverWorker.start();
                     }else{
-                        //This worker will reject the client by sending an error message
+                        //This worker will reject the client by sending an error message.
                         ServerWorker serverWorker = new ServerWorker(clientSocket, Boolean.FALSE);
                         serverWorker.start();
                     }
@@ -54,10 +54,10 @@ public class ServerApplication {
         }
     }
     
-    public static void useClientConnection(){
+    public static synchronized void useClientConnection(){
         freeClientConnections--;
     }
-    public static void releaseClientConnection(){
+    public static synchronized void releaseClientConnection(){
         freeClientConnections++;
     }
 }
