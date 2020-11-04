@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.rmi.UnexpectedException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -84,8 +85,7 @@ public class ServerWorker extends Thread {
                 }
                 break;
             default:
-                returnMessage = new Message(Message.Type.UNEXPECTED_ERROR, user);
-                break;
+                throw new UnexpectedException("Message recieve from the client was not valid.");
         }
         serverOutput.writeObject(returnMessage);
         serverOutput.flush();
@@ -105,6 +105,9 @@ public class ServerWorker extends Thread {
                 throw new UnexpectedErrorException("No connections avaliabe in the server, rejecting client.");
             }
         } catch (IOException | NullPointerException | ClassNotFoundException | UnexpectedErrorException e) {
+            if(!(e instanceof UnexpectedErrorException)){
+                Logger.getLogger(UnexpectedErrorException.class.getName()).log(Level.SEVERE, e.getMessage());
+            }
             sendUnexpectedErrorMessage();
         } finally {
             try {

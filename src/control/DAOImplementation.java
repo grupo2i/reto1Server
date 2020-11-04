@@ -100,10 +100,8 @@ public class DAOImplementation implements DAO {
             if (!auxUser.getPassword().equals(user.getPassword())) {
                 throw new PasswordDoesNotMatchException();
             }
-        }catch(SQLException e){
-            throw new SQLException();
-        } catch (IOException ex) {
-            throw new UnexpectedErrorException(ex.getMessage());
+        }catch(SQLException | IOException e){
+            throw new UnexpectedErrorException(e.getMessage());
         } finally{
             Disconnect();
         }
@@ -116,9 +114,10 @@ public class DAOImplementation implements DAO {
      * @throws UserAlreadyExistsException
      * @throws EmailAlreadyExistsException
      * @throws java.sql.SQLException
+     * @throws exceptions.UnexpectedErrorException
      */
     @Override
-    public User signUp(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException, SQLException {
+    public User signUp(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException, SQLException, UnexpectedErrorException {
         try{
             Integer idAssign;
 
@@ -161,7 +160,7 @@ public class DAOImplementation implements DAO {
             st.executeUpdate();
             st.close();
         }catch(SQLException e){
-            throw new SQLException();
+            throw new UnexpectedErrorException(e.getMessage());
         }finally{
             Disconnect();
         }
