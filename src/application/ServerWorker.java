@@ -102,7 +102,7 @@ public class ServerWorker extends Thread {
                 Message input = (Message)clientInput.readObject();
                 HandleClientMessages(input);
             }else{
-                throw new UnexpectedErrorException();
+                throw new UnexpectedErrorException("No connections avaliabe in the server, rejecting client.");
             }
         } catch (IOException | NullPointerException | ClassNotFoundException | UnexpectedErrorException e) {
             sendUnexpectedErrorMessage();

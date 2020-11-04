@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  * @author aitor
  */
 public class ServerApplication {
-    private static Integer freeClientConnections = 10;
+    private static Integer freeClientConnections;
     
     /**
      * @param args the command line arguments
@@ -26,6 +26,7 @@ public class ServerApplication {
 
             ResourceBundle configFile = ResourceBundle.getBundle("configuration.config");
             Integer port = Integer.valueOf(configFile.getString("Port"));
+            freeClientConnections = Integer.valueOf(configFile.getString("MaxServerConnections"));
             serverSocket = new ServerSocket(port);
             
             Logger.getLogger(ServerApplication.class.getName()).log(Level.INFO, "Server listening on port: ", serverSocket.getLocalPort());
@@ -47,9 +48,9 @@ public class ServerApplication {
                 }
             }
         } catch (IOException ex) {
-            Logger.getLogger(ServerApplication.class.getName()).log(Level.INFO, "IOException: {0}", ex.getMessage());
+            Logger.getLogger(ServerApplication.class.getName()).log(Level.SEVERE, "IOException: {0}", ex.getMessage());
         } catch (SQLException ex) {
-            Logger.getLogger(ServerApplication.class.getName()).log(Level.INFO, "SQLException: {0}", ex.getMessage());
+            Logger.getLogger(ServerApplication.class.getName()).log(Level.SEVERE, "SQLException: {0}", ex.getMessage());
         }
     }
     

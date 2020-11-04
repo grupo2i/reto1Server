@@ -103,7 +103,7 @@ public class DAOImplementation implements DAO {
         }catch(SQLException e){
             throw new SQLException();
         } catch (IOException ex) {
-            throw new UnexpectedErrorException();
+            throw new UnexpectedErrorException(ex.getMessage());
         } finally{
             Disconnect();
         }

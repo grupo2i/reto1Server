@@ -16,7 +16,7 @@ import java.util.ResourceBundle;
  * @author aitor
  */
 public class ConnectionPool {
-    private static final Integer TOTAL_CONNECTIONS = 10;
+    private static Integer totalDBConnections;
     
     private static ArrayList<Connection> freeConnections = new ArrayList<>();
     private static ArrayList<Connection> usedConnections = new ArrayList<>();
@@ -26,7 +26,8 @@ public class ConnectionPool {
     
     public static void initializePool() throws SQLException{
         propertiesFile = ResourceBundle.getBundle("configuration.config");
-        for(int i = 0; i < TOTAL_CONNECTIONS; i++){
+        totalDBConnections = Integer.valueOf(propertiesFile.getString("MaxDBConnections"));
+        for(int i = 0; i < totalDBConnections; i++){
             freeConnections.add(DriverManager.getConnection(propertiesFile.getString("Conn"),
                 propertiesFile.getString("DBUser"), propertiesFile.getString("DBPass")));
         }
