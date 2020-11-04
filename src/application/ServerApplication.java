@@ -27,14 +27,13 @@ public class ServerApplication {
             ResourceBundle configFile = ResourceBundle.getBundle("configuration.config");
             Integer port = Integer.valueOf(configFile.getString("Port"));
             serverSocket = new ServerSocket(port);
-
-            System.out.println("Server listening on port: " + serverSocket.getLocalPort());
+            
+            Logger.getLogger(ServerApplication.class.getName()).log(Level.INFO, "Server listening on port: ", serverSocket.getLocalPort());
 
             //Accept connections and start a listener thread through Worker.
             while(true) {
                 try {
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("server accept");
                     if(freeClientConnections > 0){
                         ServerWorker serverWorker = new ServerWorker(clientSocket, Boolean.TRUE);
                         serverWorker.start();
@@ -44,13 +43,13 @@ public class ServerApplication {
                         serverWorker.start();
                     }
                 } catch (IOException ex) {
-                    System.out.println("IOException: " + ex.getMessage());
+                    Logger.getLogger(ServerApplication.class.getName()).log(Level.SEVERE, "IOException: {0}", ex.getMessage());
                 }
             }
         } catch (IOException ex) {
-            System.out.println("IOException: " + ex.getMessage());
+            Logger.getLogger(ServerApplication.class.getName()).log(Level.INFO, "IOException: {0}", ex.getMessage());
         } catch (SQLException ex) {
-            Logger.getLogger(ServerApplication.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ServerApplication.class.getName()).log(Level.INFO, "SQLException: {0}", ex.getMessage());
         }
     }
     

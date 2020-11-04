@@ -42,7 +42,7 @@ public class ServerWorker extends Thread {
             serverOutput = new ObjectOutputStream(clientSocket.getOutputStream());
             clientInput = new ObjectInputStream(clientSocket.getInputStream());
         } catch (IOException ex) {
-            System.out.println("IO Error/ ServerWorker terminated abruptly");
+            Logger.getLogger(ServerWorker.class.getName()).log(Level.SEVERE, "IOException: {0}", ex.getMessage());
         }
     }
     
@@ -109,8 +109,8 @@ public class ServerWorker extends Thread {
         } finally {
             try {
                 disconnect();
-            } catch(IOException ie) {
-                System.out.println("Socket Close Error");
+            } catch(IOException ex) {
+                Logger.getLogger(ServerWorker.class.getName()).log(Level.SEVERE, "IOException: {0}", ex.getMessage());
             }
         }
     }
@@ -126,18 +126,18 @@ public class ServerWorker extends Thread {
     }
     
     private void disconnect() throws IOException{
-        System.out.println("Connection Closing..");
+        Logger.getLogger(ServerWorker.class.getName()).log(Level.INFO, "Connection Closing.");
         if(serverOutput != null) {
            serverOutput.close();
-           System.out.println("Socket Out Closed");
+           Logger.getLogger(ServerWorker.class.getName()).log(Level.INFO, "Socket Out Closed.");
         }
         if (clientInput != null) {
             clientInput.close(); 
-            System.out.println("Socket Input Closed");
+            Logger.getLogger(ServerWorker.class.getName()).log(Level.INFO, "Socket Input Closed.");
         }
         if (clientSocket != null) {
             clientSocket.close();
-            System.out.println("Socket Closed");
+            Logger.getLogger(ServerWorker.class.getName()).log(Level.INFO, "Socket Closed.");
         }
         if(hasConnection) ServerApplication.releaseClientConnection();
     }
