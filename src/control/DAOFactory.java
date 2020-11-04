@@ -11,7 +11,7 @@ package control;
  */
 public class DAOFactory {
     
-    public DAO getDao(int opc){
+    public static synchronized DAO getDao(int opc){
         switch(opc){
             case 1:
                 return new DAOImplementation();

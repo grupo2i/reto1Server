@@ -11,6 +11,8 @@ import java.util.ResourceBundle;
  * @author aitor
  */
 public class ServerApplication {
+    private static Integer freeClientConnections = 10;
+    
     /**
      * @param args the command line arguments
      */
@@ -28,14 +30,28 @@ public class ServerApplication {
         System.out.println("Server listening on port: " + serverSocket.getLocalPort());
         
         //Accept connections and start a listener thread through Worker.
-        Socket clientSocket = null;
         while(true) {
             try {
-                clientSocket = serverSocket.accept();
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("server accept");
+                if(freeClientConnections > 0){
+                    ServerWorker serverWorker = new ServerWorker(clientSocket, Boolean.TRUE);
+                    serverWorker.start();
+                }else{
+                    //This worker will reject the client by sending an error message
+                    ServerWorker serverWorker = new ServerWorker(clientSocket, Boolean.FALSE);
+                    serverWorker.start();
+                }
             } catch (IOException ex) {
                 System.out.println("IOException: " + ex.getMessage());
             }
-            new ServerWorker(clientSocket).start();
         }
+    }
+    
+    public static void useClientConnection(){
+        freeClientConnections--;
+    }
+    public static void releaseClientConnection(){
+        freeClientConnections++;
     }
 }
