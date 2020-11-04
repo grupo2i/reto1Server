@@ -29,7 +29,7 @@ public class ServerApplication {
             freeClientConnections = Integer.valueOf(configFile.getString("MaxServerConnections"));
             serverSocket = new ServerSocket(port);
             
-            Logger.getLogger(ServerApplication.class.getName()).log(Level.INFO, "Server listening on port: ", serverSocket.getLocalPort());
+            Logger.getLogger(ServerApplication.class.getName()).log(Level.INFO, "Server listening on port: {0}", serverSocket.getLocalPort());
 
             //Accept connections and start a listener thread through Worker.
             while(true) {
