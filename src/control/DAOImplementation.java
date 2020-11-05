@@ -100,6 +100,8 @@ public class DAOImplementation implements DAO {
             if (!auxUser.getPassword().equals(user.getPassword())) {
                 throw new PasswordDoesNotMatchException();
             }
+            auxUser.setLastAccess(Date.valueOf(LocalDate.now()));
+            updateUserOnLogIn(auxUser.getLastAccess(), auxUser.getId());
         }catch(SQLException | IOException e){
             throw new UnexpectedErrorException(e.getMessage());
         } finally{
@@ -107,6 +109,18 @@ public class DAOImplementation implements DAO {
         }
         return auxUser;
     }
+    
+    /**
+     * 
+     */
+    private void updateUserOnLogIn(Date lastAccess, Integer id) throws SQLException {
+        stmt = conn.createStatement();
+        String query;
+        query = "UPDATE user SET lastAccess='" + lastAccess + "' WHERE id=" + id + ";";
+        System.out.println(query);
+        stmt.executeUpdate(query);
+    }
+    
      /**
      *
      * @param user
@@ -208,5 +222,4 @@ public class DAOImplementation implements DAO {
         }
         return esta;
     }
-
 }
