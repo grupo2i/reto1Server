@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 /**
- *
+ * delivers connections when asked to.
  * @author aitor
  */
 public class ConnectionPool {
@@ -23,7 +23,10 @@ public class ConnectionPool {
     
     private static ResourceBundle propertiesFile = null;
     
-    
+    /**
+     * initializes the pool to congif file
+     * @throws SQLException 
+     */
     public static void initializePool() throws SQLException{
         propertiesFile = ResourceBundle.getBundle("configuration.config");
         totalDBConnections = Integer.valueOf(propertiesFile.getString("MaxDBConnections"));
@@ -32,7 +35,10 @@ public class ConnectionPool {
                 propertiesFile.getString("DBUser"), propertiesFile.getString("DBPass")));
         }
     }
-    
+    /**
+     * gets connection
+     * @return used connections -1
+     */
     public static synchronized Connection getConnection(){
         while(true){
             if(freeConnections.size() > 0){
@@ -44,7 +50,10 @@ public class ConnectionPool {
         }
         return usedConnections.get(usedConnections.size()-1);
     }
-    
+    /**
+     * adds connection to freeConnections and removes recieved connection
+     * @param connection 
+     */
     public static synchronized void releaseConnection(Connection connection){
         freeConnections.add(connection);
         usedConnections.remove(connection);

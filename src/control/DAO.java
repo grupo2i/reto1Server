@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 /**
- *
+ * DAO's interface
  * @author aitor
  */
 public interface DAO {

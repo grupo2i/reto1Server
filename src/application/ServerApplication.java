@@ -53,10 +53,15 @@ public class ServerApplication {
             Logger.getLogger(ServerApplication.class.getName()).log(Level.SEVERE, "SQLException: {0}", ex.getMessage());
         }
     }
-    
+  /**
+   * -- to free client connections
+   */
     public static synchronized void useClientConnection(){
         freeClientConnections--;
     }
+   /**
+   * ++ to free client connections
+   */
     public static synchronized void releaseClientConnection(){
         freeClientConnections++;
     }
