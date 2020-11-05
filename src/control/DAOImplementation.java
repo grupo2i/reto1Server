@@ -17,23 +17,26 @@ import user.User;
 
 /**
  * Data Access Object.
- *
- * @author Ander
+ * @see ConnectionPool
+ * @author Ander Vicente
  */
 public class DAOImplementation implements DAO {
-
     private Statement stmt = null;
     private ResultSet rs = null;
     private Connection conn = null;
     
-
+    /**
+     * Gets a free connection from de ConnectionPool.
+     * @see ConnectionPool
+     */
     public DAOImplementation(){
         conn = ConnectionPool.getConnection();
     }
 
     /**
-     * Disconnects from the database.
-     * @throws java.sql.SQLException
+     * Closes ResultSet, Statement and releases the connection to the ConnectionPool.
+     * @throws SQLException If something goes wrong.
+     * @see ConnectionPool
      */
     @Override
     public void Disconnect() throws SQLException{
@@ -44,19 +47,17 @@ public class DAOImplementation implements DAO {
             stmt.close();
         }
         if (conn != null) {
-            //conn.close();
             ConnectionPool.releaseConnection(conn);
         }
     }
 
     /**
-     * Gets user object recieving a username.
-     *
-     * @param username
-     * @return true/false
-     * @throws exceptions.UserNotFoundException
-     * @throws java.io.IOException
-     * @throws java.sql.SQLException
+     * Returns a full User instance from the DB.
+     * @param username Used to look for the user.
+     * @return A user with all the data registered in the DB.
+     * @throws UserNotFoundException If the user is not registered in the DB.
+     * @throws IOException If something goes wrong.
+     * @throws SQLException If something goes wrong.
      */
     @Override
     public User getUserByUsername(String username) throws UserNotFoundException, IOException, SQLException{
@@ -84,13 +85,13 @@ public class DAOImplementation implements DAO {
     }
 
     /**
-     * 
-     * @param user
-     * @return
-     * @throws UserNotFoundException
-     * @throws PasswordDoesNotMatchException
-     * @throws java.sql.SQLException
-     * @throws exceptions.UnexpectedErrorException
+     * Checks if there is any error in the signIn operation.
+     * @param user The user trying to sign in.
+     * @return All the data of the user trying to sign in.
+     * @throws UserNotFoundException If the user is not registered in the DB.
+     * @throws PasswordDoesNotMatchException If the introduced password does not match with the user.
+     * @throws SQLException If something goes wrong.
+     * @throws UnexpectedErrorException If something goes wrong.
      */
     @Override
     public User signIn(User user) throws UserNotFoundException, PasswordDoesNotMatchException, SQLException, UnexpectedErrorException {
@@ -111,9 +112,13 @@ public class DAOImplementation implements DAO {
     }
     
     /**
-     * 
+     * Updates the last access of a user after loging in.
+     * @param lastAccess Date of the last access (now).
+     * @param id Used to identify the user to update.
+     * @throws SQLException If something goes wrong.
      */
-    private void updateUserOnLogIn(Date lastAccess, Integer id) throws SQLException {
+    @Override
+    public void updateUserOnLogIn(Date lastAccess, Integer id) throws SQLException {
         stmt = conn.createStatement();
         String query;
         query = "UPDATE user SET lastAccess='" + lastAccess + "' WHERE id=" + id + ";";
@@ -121,14 +126,14 @@ public class DAOImplementation implements DAO {
         stmt.executeUpdate(query);
     }
     
-     /**
-     *
-     * @param user
-     * @return
-     * @throws UserAlreadyExistsException
-     * @throws EmailAlreadyExistsException
-     * @throws java.sql.SQLException
-     * @throws exceptions.UnexpectedErrorException
+    /**
+     * Registers a user in the DB.
+     * @param user User trying to register.
+     * @return A user instance with the remaining data the client did not specify.
+     * @throws UserAlreadyExistsException If the username is already registered in the DB.
+     * @throws EmailAlreadyExistsException If the email is already registered in the DB
+     * @throws SQLException If something goes wrong.
+     * @throws UnexpectedErrorException If something ges wrong.
      */
     @Override
     public User signUp(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException, SQLException, UnexpectedErrorException {
@@ -153,12 +158,14 @@ public class DAOImplementation implements DAO {
             }else{
                 idAssign = 0;
             }
+            //Setting the data the client did not specify...
             user.setId(idAssign + 1);
             user.setStatus(User.UserStatus.ENABLED);
             user.setPrivilege(User.UserPrivilege.USER);
             user.setLastAccess(Date.valueOf(LocalDate.now()));
             user.setLastPasswordChange(Date.valueOf(LocalDate.now()));
 
+            //Inserting the users data...
             String insert = "insert into user values(?,?,?,?,?,?,?,?,?);";
             PreparedStatement st;
             st = conn.prepareStatement(insert);
@@ -182,14 +189,14 @@ public class DAOImplementation implements DAO {
     }
 
     /**
-     * 
-     * @param username
-     * @return 
-     * @throws java.sql.SQLException 
+     * Checks if a username is already registered or not.
+     * @param username Username that is being checked.
+     * @return True if it is already registered, false if not.
+     * @throws SQLException If something goes wrong.
      */
     @Override
     public boolean userNameIsRegistered(String username) throws SQLException {
-        boolean esta = false;
+        boolean isRegistered = false;
         stmt = conn.createStatement();
         String query;
         query = "SELECT * FROM user WHERE username = '" + username + "';";
@@ -197,16 +204,16 @@ public class DAOImplementation implements DAO {
         rs = stmt.getResultSet();
 
         if (rs.next()) {
-            esta = true;
+            isRegistered = true;
         }
-        return esta;
+        return isRegistered;
     }
 
     /**
-     *
-     * @param email
-     * @return
-     * @throws java.sql.SQLException
+     * Checks if an email is already registered or not.
+     * @param email Email that is being checked.
+     * @return True if it is already registered, false if not.
+     * @throws SQLException If something goes wrong.
      */
     @Override
     public boolean emailIsRegistered(String email) throws SQLException{
