@@ -122,7 +122,6 @@ public class DAOImplementation implements DAO {
         stmt = conn.createStatement();
         String query;
         query = "UPDATE user SET lastAccess='" + lastAccess + "' WHERE id=" + id + ";";
-        System.out.println(query);
         stmt.executeUpdate(query);
     }
     
