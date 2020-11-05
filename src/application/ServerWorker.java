@@ -20,7 +20,7 @@ import user.User;
 
 /**
  * Handles messages from a client. Every accepted connection launches a ServerWorker
- * @author Martin Angulo
+ * @author Martin Angulo, Aitor Fidalgo
  */
 public class ServerWorker extends Thread {
     private Socket clientSocket = null;
@@ -31,15 +31,15 @@ public class ServerWorker extends Thread {
     /**
      * ServerWorker constructor, initializes IO with the client.
      * @param client Client socket from the accepted connection.
-     * @param hasConnection
+     * @param hasConnection True if the worker should provide response
+     * false if it should reject the client. 
      */
     public ServerWorker(Socket client, Boolean hasConnection) {
         try {
             this.hasConnection = hasConnection;
+            //Decrementing free connection if the worker is using one.
             if(this.hasConnection) ServerApplication.useClientConnection();
-            //Should check the socket
             clientSocket = client;
-            //The order is important! (Opposite of clients order to avoid a deadlock)
             serverOutput = new ObjectOutputStream(clientSocket.getOutputStream());
             clientInput = new ObjectInputStream(clientSocket.getInputStream());
         } catch (IOException ex) {
@@ -50,13 +50,17 @@ public class ServerWorker extends Thread {
     /**
      * Method to handle messages from the client.
      * @param clientMessage Message to handle.
+     * @throws IOException If something goes wrong.
+     * @throws ClassNotFoundException If soething goes wrong.
      */
     private void HandleClientMessages(Message clientMessage) throws IOException, ClassNotFoundException {
-        //Get message type
+        //Getting message type.
         Message.Type messageType = clientMessage.getType();
         Message returnMessage;
-        DAO dao = DAOFactory.getDao(1);
+        DAO dao = DAOFactory.getDao();
+        //Getting User from the recieved message.
         User user = (User)clientMessage.getData();
+        
         switch(messageType) {
             case SIGN_UP:
                 try{
@@ -87,12 +91,13 @@ public class ServerWorker extends Thread {
             default:
                 throw new UnexpectedException("Message recieve from the client was not valid.");
         }
+        //Sending response.
         serverOutput.writeObject(returnMessage);
         serverOutput.flush();
     }
     
     /**
-     * Handles messages from the clientSocket.
+     * Handles messages from clientSocket or rejects them by sending error message.
      */
     @Override
     public void run() {
@@ -102,9 +107,11 @@ public class ServerWorker extends Thread {
                 Message input = (Message)clientInput.readObject();
                 HandleClientMessages(input);
             }else{
+                //Reject clients connection.
                 throw new UnexpectedErrorException("No connections avaliabe in the server, rejecting client.");
             }
         } catch (IOException | NullPointerException | ClassNotFoundException | UnexpectedErrorException e) {
+            //UnexpectedErrorException shows its own logger message.
             if(!(e instanceof UnexpectedErrorException)){
                 Logger.getLogger(UnexpectedErrorException.class.getName()).log(Level.SEVERE, e.getMessage());
             }
@@ -118,6 +125,9 @@ public class ServerWorker extends Thread {
         }
     }
     
+    /**
+     * Sends an unexpected error message to the client.
+     */
     private void sendUnexpectedErrorMessage(){
         try {
             Message rejectMessage = new Message(Message.Type.UNEXPECTED_ERROR, new User());
@@ -128,6 +138,10 @@ public class ServerWorker extends Thread {
         } 
     }
     
+    /**
+     * Closes IO and Socket objects and releases a connection if its being used one.
+     * @throws IOException If something goes wrong.
+     */
     private void disconnect() throws IOException{
         Logger.getLogger(ServerWorker.class.getName()).log(Level.INFO, "Connection Closing.");
         if(serverOutput != null) {

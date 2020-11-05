@@ -11,17 +11,18 @@ import java.util.logging.Logger;
 
 /**
  * Server entry point.
- * @author aitor
+ * @author Martin Angulo, Aitor Fidalgo
  */
 public class ServerApplication {
     private static Integer freeClientConnections;
     
     /**
+     * Listen to clients connections and provide a response.
      * @param args the command line arguments
      */
     public static void main(String[] args) {
         try{
-            ServerSocket serverSocket = null;
+            ServerSocket serverSocket;
             ConnectionPool.initializePool();
 
             ResourceBundle configFile = ResourceBundle.getBundle("configuration.config");
@@ -31,11 +32,12 @@ public class ServerApplication {
             
             Logger.getLogger(ServerApplication.class.getName()).log(Level.INFO, "Server listening on port: {0}", serverSocket.getLocalPort());
 
-            //Accept connections and start a listener thread through Worker.
+            //Listen to clients connections and provide a response.
             while(true) {
                 try {
                     Socket clientSocket = serverSocket.accept();
                     if(freeClientConnections > 0){
+                        //This worker will handle a clients message and give a response.
                         ServerWorker serverWorker = new ServerWorker(clientSocket, Boolean.TRUE);
                         serverWorker.start();
                     }else{

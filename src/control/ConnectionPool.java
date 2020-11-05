@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package control;
 
 import java.sql.Connection;
@@ -12,8 +7,8 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 /**
- * delivers connections when asked to.
- * @author aitor
+ * Provides connections when asked to.
+ * @author Aitor Fidalgo
  */
 public class ConnectionPool {
     private static Integer totalDBConnections;
@@ -24,8 +19,8 @@ public class ConnectionPool {
     private static ResourceBundle propertiesFile = null;
     
     /**
-     * initializes the pool to congif file
-     * @throws SQLException 
+     * Initializes the pool to congif file
+     * @throws SQLException If something goes wrong.
      */
     public static void initializePool() throws SQLException{
         propertiesFile = ResourceBundle.getBundle("configuration.config");
@@ -36,8 +31,8 @@ public class ConnectionPool {
         }
     }
     /**
-     * gets connection
-     * @return used connections -1
+     * Keeps looping until theres a free connection and returns it.
+     * @return A free connection wich is now a used connection.
      */
     public static synchronized Connection getConnection(){
         while(true){
@@ -51,8 +46,8 @@ public class ConnectionPool {
         return usedConnections.get(usedConnections.size()-1);
     }
     /**
-     * adds connection to freeConnections and removes recieved connection
-     * @param connection 
+     * Adds a used connection to free connections.
+     * @param connection The connection that is being freed.
      */
     public static synchronized void releaseConnection(Connection connection){
         freeConnections.add(connection);
