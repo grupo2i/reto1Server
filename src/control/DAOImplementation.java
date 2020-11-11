@@ -12,34 +12,40 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import user.User;
 
 /**
  * Data Access Object.
+ *
  * @see ConnectionPool
  * @author Ander Vicente
  */
 public class DAOImplementation implements DAO {
+
     private Statement stmt = null;
     private ResultSet rs = null;
     private Connection conn = null;
-    
+
     /**
      * Gets a free connection from de ConnectionPool.
+     *
      * @see ConnectionPool
      */
-    public DAOImplementation(){
+    public DAOImplementation() {
         conn = ConnectionPool.getConnection();
     }
 
     /**
-     * Closes ResultSet, Statement and releases the connection to the ConnectionPool.
+     * Closes ResultSet, Statement and releases the connection to the
+     * ConnectionPool.
+     *
      * @throws SQLException If something goes wrong.
      * @see ConnectionPool
      */
     @Override
-    public void Disconnect() throws SQLException{
+    public void Disconnect() throws SQLException {
         if (rs != null) {
             rs.close();
         }
@@ -53,6 +59,7 @@ public class DAOImplementation implements DAO {
 
     /**
      * Returns a full User instance from the DB.
+     *
      * @param username Used to look for the user.
      * @return A user with all the data registered in the DB.
      * @throws UserNotFoundException If the user is not registered in the DB.
@@ -60,13 +67,23 @@ public class DAOImplementation implements DAO {
      * @throws SQLException If something goes wrong.
      */
     @Override
-    public User getUserByUsername(String username) throws UserNotFoundException, IOException, SQLException{
+    public User getUserByUsername(String username) throws UserNotFoundException, IOException, SQLException {
         User auxUser = new User();
-        stmt = conn.createStatement();
+        /* stmt = conn.createStatement();
         String query;
         query = "SELECT * FROM user WHERE username like '" + username + "';";
         stmt.execute(query);
-        rs = stmt.getResultSet();
+        rs = stmt.getResultSet();*/
+        
+       /* String query = "SELECT * FROM user WHERE username like '" + username + "';";
+        PreparedStatement st;
+        st = conn.prepareStatement(query);
+        rs = st.executeQuery();*/
+        
+        String query = "SELECT * FROM user WHERE username like '" + username + "';";
+        PreparedStatement statement = conn.prepareStatement(query);
+        statement.execute();
+        rs = statement.executeQuery();
 
         if (rs.next()) {
             auxUser.setId(rs.getInt("id"));
@@ -86,10 +103,12 @@ public class DAOImplementation implements DAO {
 
     /**
      * Checks if there is any error in the signIn operation.
+     *
      * @param user The user trying to sign in.
      * @return All the data of the user trying to sign in.
      * @throws UserNotFoundException If the user is not registered in the DB.
-     * @throws PasswordDoesNotMatchException If the introduced password does not match with the user.
+     * @throws PasswordDoesNotMatchException If the introduced password does not
+     * match with the user.
      * @throws SQLException If something goes wrong.
      * @throws UnexpectedErrorException If something goes wrong.
      */
@@ -103,40 +122,57 @@ public class DAOImplementation implements DAO {
             }
             auxUser.setLastAccess(Date.valueOf(LocalDate.now()));
             updateUserOnLogIn(auxUser.getLastAccess(), auxUser.getId());
-        }catch(SQLException | IOException e){
+        } catch (SQLException | IOException e) {
             throw new UnexpectedErrorException(e.getMessage());
-        } finally{
+        } finally {
             Disconnect();
         }
         return auxUser;
     }
-    
+
     /**
      * Updates the last access of a user after loging in.
+     *
      * @param lastAccess Date of the last access (now).
      * @param id Used to identify the user to update.
      * @throws SQLException If something goes wrong.
      */
-    @Override
     public void updateUserOnLogIn(Date lastAccess, Integer id) throws SQLException {
-        stmt = conn.createStatement();
+        /*stmt = conn.createStatement();
         String query;
         query = "UPDATE user SET lastAccess='" + lastAccess + "' WHERE id=" + id + ";";
-        stmt.executeUpdate(query);
+        stmt.executeUpdate(query);*/
+        /*
+        String query = "UPDATE user SET lastAccess='" + lastAccess + "' WHERE id=" + id + ";";
+        PreparedStatement st;
+        st = conn.prepareStatement(query);
+        rs = st.executeQuery();*/
+        
+        String query = "UPDATE user SET lastAccess='" + lastAccess + "' WHERE id=" + id + ";";
+        PreparedStatement statement = conn.prepareStatement(query);
+        statement.execute();
+        //rs = statement.executeQuery();
+       /* statement.executeUpdate();
+        statement.close();*/
+
     }
-    
+
     /**
      * Registers a user in the DB.
+     *
      * @param user User trying to register.
-     * @return A user instance with the remaining data the client did not specify.
-     * @throws UserAlreadyExistsException If the username is already registered in the DB.
-     * @throws EmailAlreadyExistsException If the email is already registered in the DB
+     * @return A user instance with the remaining data the client did not
+     * specify.
+     * @throws UserAlreadyExistsException If the username is already registered
+     * in the DB.
+     * @throws EmailAlreadyExistsException If the email is already registered in
+     * the DB
      * @throws SQLException If something goes wrong.
      * @throws UnexpectedErrorException If something ges wrong.
      */
     @Override
     public User signUp(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException, SQLException, UnexpectedErrorException {
-        try{
+        try {
             Integer idAssign;
 
             if (userNameIsRegistered(user.getLogin())) {
@@ -146,15 +182,20 @@ public class DAOImplementation implements DAO {
                 throw new EmailAlreadyExistsException(user.getEmail());
             }
 
-            stmt = conn.createStatement();
+            /*stmt = conn.createStatement();
             String query;
             query = "SELECT COUNT(*) FROM user;";
             stmt.execute(query);
-            rs = stmt.getResultSet();
-            if(rs.next()){
+            rs = stmt.getResultSet();*/
+            String query = "SELECT COUNT(*) FROM user;";
+            PreparedStatement statement = conn.prepareStatement(query);
+            statement.execute();
+            rs = statement.executeQuery();
+
+            if (rs.next()) {
                 idAssign = rs.getInt(1);
 
-            }else{
+            } else {
                 idAssign = 0;
             }
             //Setting the data the client did not specify...
@@ -179,9 +220,9 @@ public class DAOImplementation implements DAO {
             st.setDate(9, user.getLastPasswordChange());
             st.executeUpdate();
             st.close();
-        }catch(SQLException e){
+        } catch (SQLException e) {
             throw new UnexpectedErrorException(e.getMessage());
-        }finally{
+        } finally {
             Disconnect();
         }
         return user;
@@ -189,6 +230,7 @@ public class DAOImplementation implements DAO {
 
     /**
      * Checks if a username is already registered or not.
+     *
      * @param username Username that is being checked.
      * @return True if it is already registered, false if not.
      * @throws SQLException If something goes wrong.
@@ -196,12 +238,18 @@ public class DAOImplementation implements DAO {
     @Override
     public boolean userNameIsRegistered(String username) throws SQLException {
         boolean isRegistered = false;
-        stmt = conn.createStatement();
+        /* stmt = conn.createStatement();
         String query;
         query = "SELECT * FROM user WHERE username = '" + username + "';";
         stmt.execute(query);
         rs = stmt.getResultSet();
-
+         */
+        String query = "SELECT * FROM user WHERE username = '" + username + "';";
+        PreparedStatement statement = conn.prepareStatement(query);
+        statement.execute();
+        rs = statement.executeQuery();
+        /*statement.executeUpdate();
+        statement.close();*/
         if (rs.next()) {
             isRegistered = true;
         }
@@ -210,22 +258,38 @@ public class DAOImplementation implements DAO {
 
     /**
      * Checks if an email is already registered or not.
+     *
      * @param email Email that is being checked.
      * @return True if it is already registered, false if not.
      * @throws SQLException If something goes wrong.
      */
     @Override
-    public boolean emailIsRegistered(String email) throws SQLException{
+    public boolean emailIsRegistered(String email) throws SQLException {
         boolean esta = false;
-        stmt = conn.createStatement();
+        /* stmt = conn.createStatement();
         String query;
         query = "SELECT * FROM user WHERE email = '" + email + "';";
         stmt.execute(query);
-        rs = stmt.getResultSet();
-
+        rs = stmt.getResultSet();*/
+        String query = "SELECT * FROM user WHERE email = '" + email + "';";
+        PreparedStatement statement = conn.prepareStatement(query);
+        rs = statement.executeQuery();
         if (rs.next()) {
             esta = true;
         }
         return esta;
     }
+    
+   /* private static java.sql.Timestamp getCurrentTimeStamp() {
+
+    java.util.Date today = new java.util.Date();
+    return new java.sql.Timestamp(today.getTime());
+
+}*/
+/*
+    @Override
+    public void updateUserOnLogIn(Date lastAccess, Integer id) throws SQLException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }*/
 }
+
