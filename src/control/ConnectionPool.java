@@ -14,7 +14,6 @@ public class ConnectionPool {
     private static Integer totalDBConnections;
     
     private static ArrayList<Connection> freeConnections = new ArrayList<>();
-    private static ArrayList<Connection> usedConnections = new ArrayList<>();
     
     private static ResourceBundle propertiesFile = null;
     
@@ -35,15 +34,15 @@ public class ConnectionPool {
      * @return A free connection wich is now a used connection.
      */
     public static synchronized Connection getConnection(){
+        Connection connection;
         while(true){
             if(freeConnections.size() > 0){
-                Connection connection = freeConnections.get(freeConnections.size()-1);
+                connection = freeConnections.get(freeConnections.size()-1);
                 freeConnections.remove(freeConnections.size()-1);
-                usedConnections.add(connection);
                 break;
             }
         }
-        return usedConnections.get(usedConnections.size()-1);
+        return connection;
     }
     /**
      * Adds a used connection to free connections.
@@ -51,7 +50,6 @@ public class ConnectionPool {
      */
     public static synchronized void releaseConnection(Connection connection){
         freeConnections.add(connection);
-        usedConnections.remove(connection);
     }
     
 }
